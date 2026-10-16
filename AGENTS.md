@@ -8,7 +8,7 @@
 
 ## Coding conventions
 
-- Write documentation, docstrings, and comments in clear, natural British English. Preserve API names, external identifiers, and quoted text.
+- Write documentation, docstrings, and comments in clear, natural English. Preserve API names, external identifiers, and quoted text.
 - Use `bytes` for binary data and `str` for text; encode and decode explicitly at defined boundaries.
 - Use modern type annotations supported by the minimum Python version and numpydoc-style docstrings for public APIs.
 - Prefer explicit imports. Combine imports from the same module when readable; use aliases only to clarify ambiguous names. Do not use wildcard imports.
