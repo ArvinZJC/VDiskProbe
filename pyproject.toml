@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vdiskprobe"
-version = "1.0.0.dev0"
+version = "1.0.0"
 description = "A lightweight Python library and CLI for detecting virtual disk image formats and reading size metadata from local files, custom readers, and HTTP/HTTPS URLs."
 authors = [{email = "SteveJobz@isarvin.com"}]
 readme = "README.md"
