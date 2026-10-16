@@ -1,8 +1,14 @@
 # VDiskProbe
 
+![GitHub Release](https://img.shields.io/github/v/release/ArvinZJC/VDiskProbe)
+[![PyPI version](https://img.shields.io/pypi/v/vdiskprobe)](https://pypi.org/project/vdiskprobe/)
+[![Python versions](https://img.shields.io/pypi/pyversions/vdiskprobe)](https://pypi.org/project/vdiskprobe/)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ArvinZJC/VDiskProbe)
+[![GitHub License](https://img.shields.io/github/license/ArvinZJC/VDiskProbe?label=licence)](./LICENCE)
+
 VDiskProbe is a dependency-free Python library and CLI for detecting virtual disk image formats and reading available size metadata. It accepts local paths, binary file objects, custom random-access readers, and HTTP/HTTPS URLs.
 
-VDiskProbe supports standard CPython 3.11–3.15. Detection reads headers and metadata; it does not mount, convert, decrypt, or validate an entire image.
+VDiskProbe supports Python 3.11–3.15. Detection reads headers and metadata; it does not mount, convert, decrypt, or validate an entire image.
 
 ## Architecture
 
@@ -228,7 +234,9 @@ python -m pytest -m packaging -o addopts='' tests/test_packaging.py
 
 Packaging tests are excluded from the default suite. They inspect distribution contents and metadata, install both artefacts in separate clean environments, and exercise imports and both CLI entry points outside the checkout. pip must be able to obtain the build dependencies, either from a package index or a local wheel cache.
 
-Repeat the full suite and packaging checks on each supported Python minor when changing compatibility or packaging. Support tracks stable Python releases that have not reached end of life; check the Python release lifecycle when updating the supported range. Keep syntax and dependencies compatible with the minimum version listed above. Other implementations and free-threaded builds need separate validation.
+Repeat the full suite and packaging checks on each supported Python minor when changing compatibility or packaging. Support tracks stable Python releases that have not reached end of life; check the Python release lifecycle when updating the supported range. Keep syntax and dependencies compatible with the minimum version listed above.
+
+Testing currently covers standard CPython builds. Other Python implementations and free-threaded builds remain unverified.
 
 ### Versioning
 

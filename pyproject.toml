@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vdiskprobe"
-version = "0.1.0.dev0"
-description = "Inspect virtual disk formats from local and random-access byte sources"
+version = "1.0.0"
+description = "A lightweight Python library and CLI for detecting virtual disk image formats and reading size metadata from local files, custom readers, and HTTP/HTTPS URLs."
 authors = [{email = "SteveJobz@isarvin.com"}]
 readme = "README.md"
 requires-python = ">=3.11"
@@ -22,6 +22,11 @@ classifiers = [
     "Operating System :: OS Independent",
     "Topic :: System :: Filesystems",
 ]
+
+[project.urls]
+Repository = "https://github.com/ArvinZJC/VDiskProbe"
+Issues = "https://github.com/ArvinZJC/VDiskProbe/issues"
+Changelog = "https://github.com/ArvinZJC/VDiskProbe/blob/main/CHANGELOG.md"
 
 [project.scripts]
 vdiskprobe = "vdiskprobe.cli:main"
