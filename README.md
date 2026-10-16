@@ -1,5 +1,11 @@
 # VDiskProbe
 
+![GitHub Release](https://img.shields.io/github/v/release/ArvinZJC/VDiskProbe)
+[![PyPI version](https://img.shields.io/pypi/v/vdiskprobe)](https://pypi.org/project/vdiskprobe/)
+[![Python versions](https://img.shields.io/pypi/pyversions/vdiskprobe)](https://pypi.org/project/vdiskprobe/)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/ArvinZJC/VDiskProbe)
+[![GitHub License](https://img.shields.io/github/license/ArvinZJC/VDiskProbe?label=licence)](./LICENCE)
+
 VDiskProbe is a dependency-free Python library and CLI for detecting virtual disk image formats and reading available size metadata. It accepts local paths, binary file objects, custom random-access readers, and HTTP/HTTPS URLs.
 
 VDiskProbe supports Python 3.11–3.15. Detection reads headers and metadata; it does not mount, convert, decrypt, or validate an entire image.
