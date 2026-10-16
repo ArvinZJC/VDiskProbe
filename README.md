@@ -22,7 +22,13 @@ reader/path -> ByteSource -> DetectorRegistry -> ImageInfo
 
 ## Installation
 
-Install from a source checkout using a supported Python interpreter:
+Install from PyPI using a supported Python interpreter:
+
+```bash
+python -m pip install vdiskprobe
+```
+
+To install from a source checkout instead:
 
 ```bash
 python -m pip install .
@@ -45,7 +51,11 @@ Results include the format, description, confidence, detector, aliases, source n
 
 Unknown values are `None` in Python and `null` in JSON. On systems without filesystem block counts, `disk_size` falls back to logical file size. The content length of a remote image does not indicate how much disk space it occupies on the server.
 
-`raw` is a fallback with confidence `0.1`, meaning no recognised signature matched. It is not proof of a raw image. VMDK descriptor and cloop script heuristics use `0.95`; other recognised signatures use `1.0`. VMDK extent counts beyond the interpreter's configured decimal-conversion limit (or its default limit when disabled) yield an unknown virtual size rather than a partial total. Descriptor capacity is also unknown when the source is known to extend beyond the bytes read, or a descriptor of unknown length fills the 64 KiB inspection window. A shorter read from a source of unknown length requires an end-of-source probe before reporting capacity. Recognition can succeed on a short header without optional metadata and does not prove that the image is complete or uncorrupted. The `read_only` field describes format metadata; VDiskProbe itself only reads.
+`raw` is a fallback with confidence `0.1`, meaning no recognised signature matched. It is not proof of a raw image. VMDK descriptor and cloop script heuristics use `0.95`; other recognised signatures use `1.0`.
+
+VMDK extent counts beyond the interpreter's configured decimal-conversion limit (or its default limit when disabled) yield an unknown virtual size rather than a partial total. Descriptor capacity is also unknown when the source is known to extend beyond the bytes read, or a descriptor of unknown length fills the 64 KiB inspection window. A shorter read from a source of unknown length requires an end-of-source probe before reporting capacity.
+
+Recognition can succeed on a short header without optional metadata and does not prove that the image is complete or uncorrupted. The `read_only` field describes format metadata; VDiskProbe itself only reads.
 
 ## Command line
 
@@ -75,7 +85,7 @@ with open("disk.qcow2", "rb") as stream:
 
 `detect` and `inspect_source` accept a reader or an existing `ByteSource`, plus an optional `registry` and `name`. `detect_path` accepts a text path, `PathLike[str]`, or HTTP/HTTPS URL; `detect_url` accepts only HTTP/HTTPS URLs. Use `io.BytesIO(payload)` for in-memory bytes.
 
-Seekable readers retain their cursor. Caller-owned readers remain open; files and HTTP responses opened by the library are closed after use. A reader should expose stable contents during inspection; shared-reader thread safety and concurrent source mutation are not guaranteed.
+Seekable readers retain their cursor. Caller-owned readers remain open; files and HTTP responses opened by the library are closed after use. A reader should expose stable contents during inspection. Sharing a reader between threads or modifying the source during inspection is not guaranteed to be safe.
 
 ### Custom readers
 
@@ -154,7 +164,7 @@ from vdiskprobe import configure_logging
 configure_logging(logging.DEBUG)
 ```
 
-For applications that already configure ancestor handlers, use `configure_logging(logging.DEBUG, propagate=True)`. Enabling propagation removes the package stream handler and null handlers, whilst preserving application handlers. Repeated stream configuration reuses an existing package stream handler; it does not replace its stream. `get_logger(name)` is intended for package modules. Applications using the library should use their own `logging.getLogger(__name__)`.
+For applications that already configure handlers on ancestor loggers, use `configure_logging(logging.DEBUG, propagate=True)`. Enabling propagation removes the package stream handler and null handlers while preserving application handlers. Repeated stream configuration reuses an existing package stream handler; it does not replace its stream. `get_logger(name)` is intended for package modules. Applications using the library should use their own `logging.getLogger(__name__)`.
 
 ## Development
 
@@ -166,7 +176,7 @@ source .venv/bin/activate
 python -m pip install -e '.[dev]'
 ```
 
-Use the activation command appropriate for your shell. Development tools belong in the `dev` extra in `pyproject.toml`.
+Use the activation command appropriate for your shell. Test, formatting, and build dependencies belong in the `dev` extra in `pyproject.toml`; upload tooling is installed separately as described under [Releasing](#releasing).
 
 ### Required checks
 
@@ -241,3 +251,66 @@ Testing currently covers standard CPython builds. Other Python implementations a
 ### Versioning
 
 Versions must follow PEP 440, for example `0.1.0`, `1.0.0a1`, or `1.0.0.dev1`. The single source of truth is `[project].version` in `pyproject.toml`. `vdiskprobe/version.py` reads the installed distribution metadata using `importlib.metadata`, and the package re-exports that value as `__version__`. Install the package before importing it; an editable development install is sufficient. After changing the version, rerun `python -m pip install -e '.[dev]'` to refresh editable-install metadata, or rebuild and reinstall the distribution.
+
+### Releasing
+
+These instructions are for authorised release maintainers. Token-based publishing requires Owner or Maintainer access to the `vdiskprobe` project on the destination index and an API token whose scope includes the project. TestPyPI and PyPI permissions are managed separately; GitHub repository access does not grant publishing access. Contributors can build and test locally without publishing access. See [PyPI's project roles](https://pypi.org/help/#project-roles).
+
+Record release changes in [CHANGELOG.md](CHANGELOG.md) and validation results in the release PR. Keep account-specific setup notes outside the repository and credentials in a password manager or credential store.
+
+#### Prepare and validate
+
+1. Set the intended version in `pyproject.toml` and finalise its dated changelog entry. For an early TestPyPI rehearsal, use a development version such as `1.1.0.dev1`; prepare and validate the final version separately.
+2. Refresh the editable installation as described under [Versioning](#versioning). Run all [required checks](#required-checks) and the [packaging checks](#builds-and-compatibility). Repeat the full suite and packaging checks on every supported Python minor when changing compatibility or packaging. Run builds, editable installs, and tests sequentially: builds can refresh local package metadata while tests are reading it.
+3. Merge the release PR from `dev` into `main`. Check out the clean release commit, confirm its version and changelog, and create and push the matching `v<version>` tag. A tag or GitHub Release does not upload anything to PyPI.
+4. Build the final artefacts from that commit into a new directory. The following commands use a POSIX shell and an activated development environment; run them from the repository root:
+
+```bash
+python -m pip install --upgrade twine
+release_version=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+release_dir="$PWD/dist/release-$release_version"
+test ! -e "$release_dir" && python -m build --outdir "$release_dir"
+python -m twine check --strict "$release_dir"/*
+```
+
+Stop if a command fails. If the directory already exists, inspect it before proceeding; do not mix old and new builds. Twine is an upload tool installed separately from the development extra. Install the final wheel and source archive in separate clean environments and exercise imports and both CLI entry points outside the checkout, as the packaging checks do. Retain these exact files for both uploads; rebuild and revalidate if release content changes.
+
+#### Rehearse on TestPyPI
+
+TestPyPI and PyPI have separate accounts and API tokens. Use the token for the destination index, with `__token__` as the username. Enter tokens at the private password prompt or use a credential store; never put them in commands, documentation, or Git. See the [TestPyPI guide](https://packaging.python.org/en/latest/guides/using-testpypi/) and [PyPI authentication guidance](https://pypi.org/help/#apitoken).
+
+```bash
+python -m twine upload --repository-url https://test.pypi.org/legacy/ \
+  --username __token__ "$release_dir"/*
+```
+
+Install the uploaded version in a fresh environment outside the checkout. This example uses the wheel; local packaging checks also cover source installation. `--no-deps` is appropriate because VDiskProbe has no runtime dependencies.
+
+```bash
+smoke_dir=$(mktemp -d)
+python -m venv "$smoke_dir/venv"
+(
+  cd "$smoke_dir" || exit
+  unset PYTHONPATH
+  "$smoke_dir/venv/bin/python" -m pip install --no-cache-dir \
+    --index-url https://test.pypi.org/simple/ --no-deps "vdiskprobe==$release_version"
+  "$smoke_dir/venv/bin/vdiskprobe" --version
+  "$smoke_dir/venv/bin/python" -m vdiskprobe --list-formats
+  "$smoke_dir/venv/bin/python" -c 'from io import BytesIO; from vdiskprobe import detect; assert detect(BytesIO(b"QFI\xfb\x00\x00\x00\x03")).format == "qcow2"'
+)
+```
+
+Check that the version matches, all 13 formats are listed, and detection succeeds. Inspect the TestPyPI project description and uploaded files. Compare the files' SHA-256 digests from the index's release JSON endpoint (`https://test.pypi.org/pypi/vdiskprobe/<version>/json`) with the retained local artefacts.
+
+#### Publish and verify
+
+After the final version passes the TestPyPI rehearsal, upload those same artefacts to PyPI using the production token:
+
+```bash
+python -m twine upload --repository-url https://upload.pypi.org/legacy/ \
+  --username __token__ "$release_dir"/*
+```
+
+Repeat the smoke-test block with a new temporary environment and `https://pypi.org/simple/` as the index. Verify the description, version, wheel, source archive, and SHA-256 digests against `https://pypi.org/pypi/vdiskprobe/<version>/json`. Publication is complete once these checks pass.
+
+Uploaded filenames cannot be reused, even after deletion; corrections to a published release need a new version. If an upload is interrupted, inspect the index and compare hashes before uploading only a missing file. Do not use `--skip-existing` to hide an unexplained mismatch. See [PyPI's filename reuse policy](https://pypi.org/help/#file-name-reuse).

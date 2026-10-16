@@ -3,7 +3,7 @@
 ## Read first
 
 - Read [README.md](README.md) for the product scope, architecture, public contracts, supported runtimes, and development workflow. Preserve those contracts when changing implementation details.
-- Follow the README guidance on [required checks](README.md#required-checks), [builds and compatibility](README.md#builds-and-compatibility), and [versioning](README.md#versioning). Keep it consistent with `pyproject.toml`.
+- Follow the README guidance on [required checks](README.md#required-checks), [builds and compatibility](README.md#builds-and-compatibility), [versioning](README.md#versioning), and [releasing](README.md#releasing). Keep the README and `pyproject.toml` consistent.
 - Keep each topic in one place: README covers usage and development; this file sets out agent working rules and editing conventions. Link to existing guidance instead of repeating it.
 
 ## Coding conventions
@@ -12,7 +12,7 @@
 - Use `bytes` for binary data and `str` for text; encode and decode explicitly at defined boundaries.
 - Use modern type annotations supported by the minimum Python version and numpydoc-style docstrings for public APIs.
 - Prefer explicit imports. Combine imports from the same module when readable; use aliases only to clarify ambiguous names. Do not use wildcard imports.
-- Prioritise correctness, then measured performance, before cosmetic refactoring.
+- Prioritise correctness over performance, and measured performance improvements over cosmetic refactoring.
 - Avoid unnecessary duplication and excessive branching, particularly in byte parsing and detector dispatch.
 
 ## Working rules
@@ -23,6 +23,7 @@
 - After Python changes, run every required check linked above before handing over the work. For documentation-only changes, check whitespace and links; also validate affected examples or developer commands. A failed or unavailable check blocks a completion claim: report the failure and remaining work explicitly.
 - Keep public files, examples, fixtures, package metadata, and Git messages free of internal project names, paths, URLs, and operational data. Store any private cross-repository mapping outside this repository.
 - Keep working specifications in `docs/superpowers/specs/` and implementation plans in `docs/superpowers/plans/`. These directories are ignored; never commit or force-add their contents.
+- Treat release preparation, Git tagging, and package publication as separate actions. Upload only when authorised, and follow the README release verification steps before reporting that publication is complete.
 
 ## Changelog policy
 
