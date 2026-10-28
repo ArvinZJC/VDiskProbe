@@ -155,7 +155,11 @@ assert info.format == "example"
 
 Lower priorities run first; equal priorities retain registration order. The first match wins. Keep raw as the final fallback when creating a registry yourself; if no detector matches, the registry raises `RuntimeError`. Source failures propagate rather than becoming a raw result; refused HTTP ranges follow the bounded detection behaviour described above.
 
-`InvalidSourceError` and `RemoteSourceError` inherit from `VDiskProbeError`. Local I/O failures can raise `OSError`. Logging uses a `NullHandler` until configured; call `configure_logging()` to attach a stream handler. Library logging does not configure the application's root logger.
+`InvalidSourceError` and `RemoteSourceError` inherit from `VDiskProbeError`. Local I/O failures can raise `OSError`.
+
+VDiskProbe leaves logging configuration to the application. By default, its loggers use `NOTSET` and propagate records to ancestor handlers, inheriting the effective logging level from the logger hierarchy. The attached `NullHandler` produces no output and does not prevent propagation. Applications that already configure root logging normally need no VDiskProbe-specific setup.
+
+For dedicated console output in a standalone script, call `configure_logging()` to set the package logger's level and attach a stream handler. This disables propagation to avoid also sending records to ancestor handlers. It does not configure the application's root logger.
 
 ```python
 import logging
@@ -164,7 +168,9 @@ from vdiskprobe import configure_logging
 configure_logging(logging.DEBUG)
 ```
 
-For applications that already configure handlers on ancestor loggers, use `configure_logging(logging.DEBUG, propagate=True)`. Enabling propagation removes the package stream handler and null handlers while preserving application handlers. Repeated stream configuration reuses an existing package stream handler; it does not replace its stream. `get_logger(name)` is intended for package modules. Applications using the library should use their own `logging.getLogger(__name__)`.
+To explicitly override the package logging level while using the application's existing ancestor handlers, use `configure_logging(logging.DEBUG, propagate=True)`. This sets the package logger's level to `DEBUG` instead of inheriting it. Ancestor logger levels do not filter propagated records, but handler levels and filters still apply. To restore level inheritance, use `configure_logging(logging.NOTSET, propagate=True)`.
+
+Enabling propagation removes the package stream handler and null handlers while preserving other application-owned handlers; it adds no stream handler. Repeated stream configuration reuses an existing package stream handler; it does not replace its stream. Applications can also configure the package logger directly with `logging.getLogger("vdiskprobe")`. `get_logger(name)` is intended for package modules. Applications using the library should use their own `logging.getLogger(__name__)`.
 
 ## Development
 
