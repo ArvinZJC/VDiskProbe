@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Defer built-in format loading and heavy HTTP imports until needed on Python 3.15, while retaining eager imports on Python 3.11–3.14 and the existing public API.
+
 ## 1.0.0 — 2026-10-16
 
 - Introduce a dependency-free Python library and CLI for CPython 3.11–3.15, distributed as a wheel and source archive.

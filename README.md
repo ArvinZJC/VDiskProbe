@@ -12,13 +12,15 @@ VDiskProbe supports Python 3.11–3.15. Detection reads headers and metadata; it
 
 ## Architecture
 
-The distribution, import package, and command are named `vdiskprobe`. Public APIs are re-exported from `vdiskprobe/__init__.py` and follow this flow:
+The distribution, import package, and command are all named `vdiskprobe`. The package re-exports its public API from `vdiskprobe/__init__.py`. Detection follows this flow:
 
 ```text
 reader/path -> ByteSource -> DetectorRegistry -> ImageInfo
 ```
 
 `ByteSource` adapts readers, `DetectorRegistry` selects a detector, and `ImageInfo` holds its result. Detector classes live in `vdiskprobe/detectors/formats.py`; binary parsing helpers live in `vdiskprobe/detectors/_format_helpers.py`.
+
+With Python's default import policy, Python 3.15 loads built-in detector implementations and selected HTTP dependencies on first use. Python 3.11–3.14 load them eagerly. The public API is the same on all supported versions, and VDiskProbe leaves global import settings to the application. See [Import compatibility](#import-compatibility) for implementation and testing guidance.
 
 ## Installation
 
@@ -53,7 +55,7 @@ Unknown values are `None` in Python and `null` in JSON. On systems without files
 
 `raw` is a fallback with confidence `0.1`, meaning no recognised signature matched. It is not proof of a raw image. VMDK descriptor and cloop script heuristics use `0.95`; other recognised signatures use `1.0`.
 
-VMDK extent counts beyond the interpreter's configured decimal-conversion limit (or its default limit when disabled) yield an unknown virtual size rather than a partial total. Descriptor capacity is also unknown when the source is known to extend beyond the bytes read, or a descriptor of unknown length fills the 64 KiB inspection window. A shorter read from a source of unknown length requires an end-of-source probe before reporting capacity.
+VMDK extent sector counts that exceed the interpreter's configured decimal-conversion limit yield an unknown virtual size rather than a partial total. If that limit is disabled, VDiskProbe uses the interpreter's default limit. Descriptor capacity is also unknown when the source is known to extend beyond the bytes read, or when a descriptor of unknown length fills the 64 KiB inspection window. After a shorter read from a source of unknown length, VDiskProbe checks for additional data before reporting capacity.
 
 Recognition can succeed on a short header without optional metadata and does not prove that the image is complete or uncorrupted. The `read_only` field describes format metadata; VDiskProbe itself only reads.
 
@@ -125,7 +127,7 @@ URL paths must be percent-encoded where necessary. URL encoding failures raise `
 
 For explicit timeout and retry settings, construct `HttpRangeReader` from `vdiskprobe.http_source` and pass it to `detect(reader)`.
 
-HTTP requests use bounded byte ranges and identity encoding. Three retries allow at most four attempts for a transient failure, with exponential backoff beginning at 0.25 seconds. Remote size discovery uses a one-byte GET before falling back to HEAD. A supplied byte interval that contradicts the request raises `RemoteSourceError`; absent range metadata and unknown totals retain the size-discovery fallbacks.
+HTTP requests use bounded byte ranges and identity encoding. By default, each request allows up to three retries after transient failures, for at most four attempts, with exponential backoff beginning at 0.25 seconds. Remote size discovery uses a one-byte GET before falling back to HEAD. A response that specifies a byte interval inconsistent with the request raises `RemoteSourceError`. If range metadata is absent or the total size is unknown, size discovery can still fall back to other response headers or a HEAD request.
 
 A server that ignores ranges can still support a header match at offset zero. A refused range lets detection continue to later signatures; unavailable optional metadata remains unknown. If no signature matches, the refused range raises `RangeNotSupportedError` (a `RemoteSourceError` subclass in `vdiskprobe.errors`) rather than producing a raw result. Other transport failures propagate immediately. VDiskProbe never downloads the full image to simulate random access. Footer-based detection also depends on discovering source length.
 
@@ -186,7 +188,7 @@ Use the activation command appropriate for your shell. Test, formatting, and bui
 
 ### Required checks
 
-After every Python change, all four checks must pass: Black, fewer than 1000 lines per Python file, the complete test suite with 100% source statement and branch coverage, and Git whitespace validation. A failed or unavailable check means verification is incomplete.
+After every Python change, all four checks must pass: Black formatting, a limit of fewer than 1000 lines per Python file, the complete test suite with 100% source statement and branch coverage, and Git whitespace validation. A failed or unavailable check means verification is incomplete.
 
 Black reads its settings from `pyproject.toml`. Format the Python files, then check them:
 
@@ -250,9 +252,15 @@ python -m pytest -m packaging -o addopts='' tests/test_packaging.py
 
 Packaging tests are excluded from the default suite. They inspect distribution contents and metadata, install both artefacts in separate clean environments, and exercise imports and both CLI entry points outside the checkout. pip must be able to obtain the build dependencies, either from a package index or a local wheel cache.
 
-Repeat the full suite and packaging checks on each supported Python minor when changing compatibility or packaging. Support tracks stable Python releases that have not reached end of life; check the Python release lifecycle when updating the supported range. Keep syntax and dependencies compatible with the minimum version listed above.
+Repeat the full suite and packaging checks on each supported Python minor version when changing compatibility or packaging. Support tracks stable Python releases that have not reached end of life; check the Python release lifecycle when updating the supported range. Keep syntax and dependencies compatible with the minimum version listed above.
 
 Testing currently covers standard CPython builds. Other Python implementations and free-threaded builds remain unverified.
+
+#### Import compatibility
+
+Keep import syntax compatible with Python 3.11. To make selected imports lazy under PEP 810, define a `__lazy_modules__` set containing fully qualified module names before the relevant ordinary imports. Do not use the Python 3.15-only `lazy import` syntax. The declaration applies only within the module that defines it. Accessing an imported name during module initialisation can load the dependency immediately, so verify loading behaviour in a fresh interpreter. Leave global lazy-import settings and filters to the application.
+
+Changes to import behaviour require the full suite and packaging checks on every supported Python minor version. `tests/test_imports.py` checks eager imports on older Python versions, deferred loading, first use, public exports, CLI behaviour, and annotation resolution in fresh subprocesses. Measure startup and first-use performance against the unchanged revision. Also check byte reads, parsing, and detector dispatch after initialisation for regressions. Alternate repeated measurements of the original and changed code using the same interpreter and inputs, and report the environment and variability with any performance claim.
 
 ### Versioning
 
@@ -267,7 +275,7 @@ Record release changes in [CHANGELOG.md](CHANGELOG.md) and validation results in
 #### Prepare and validate
 
 1. Set the intended version in `pyproject.toml` and finalise its dated changelog entry. For an early TestPyPI rehearsal, use a development version such as `1.1.0.dev1`; prepare and validate the final version separately.
-2. Refresh the editable installation as described under [Versioning](#versioning). Run all [required checks](#required-checks) and the [packaging checks](#builds-and-compatibility). Repeat the full suite and packaging checks on every supported Python minor when changing compatibility or packaging. Run builds, editable installs, and tests sequentially: builds can refresh local package metadata while tests are reading it.
+2. Refresh the editable installation as described under [Versioning](#versioning). Run all [required checks](#required-checks) and the [packaging checks](#builds-and-compatibility). Repeat the full suite and packaging checks on every supported Python minor version when changing compatibility or packaging. Run builds, editable installs, and tests sequentially: builds can refresh local package metadata while tests are reading it.
 3. Merge the release PR from `dev` into `main`. Check out the clean release commit, confirm its version and changelog, and create and push the matching `v<version>` tag. A tag or GitHub Release does not upload anything to PyPI.
 4. Build the final artefacts from that commit into a new directory. The following commands use a POSIX shell and an activated development environment; run them from the repository root:
 

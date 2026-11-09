@@ -3,6 +3,8 @@
 
 """Detector registry and built-in formats."""
 
+__lazy_modules__ = {"vdiskprobe.detectors.formats"}
+
 from vdiskprobe.detectors.base import DetectorRegistry, FormatDetector
 from vdiskprobe.detectors.formats import BUILTIN_DETECTORS
 

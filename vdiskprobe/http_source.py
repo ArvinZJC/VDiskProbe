@@ -3,14 +3,16 @@
 
 """HTTP/HTTPS-backed byte source helpers."""
 
-import http.client
+__lazy_modules__ = {"http.client", "ssl", "urllib.request"}
+
+import http.client as http_client
 import os
 import re
 import ssl
 import time
 from collections.abc import Callable
 from typing import Any
-import urllib.request
+import urllib.request as urllib_request
 import urllib.error
 import urllib.parse
 from vdiskprobe.errors import InvalidSourceError, RangeNotSupportedError, RemoteSourceError
@@ -179,7 +181,7 @@ class HttpRangeReader:
             except (
                 OSError,
                 urllib.error.URLError,
-                http.client.HTTPException,
+                http_client.HTTPException,
             ) as exc:
                 if attempt + 1 < attempts:
                     self._retry(attempt, _error_text(exc))
@@ -187,12 +189,12 @@ class HttpRangeReader:
                 raise RemoteSourceError("unable to read {0}: {1}".format(self.url, _error_text(exc)))
         raise RemoteSourceError("unable to read {0}: no request attempts configured".format(self.url))
 
-    def _build_request(self, method: str, headers: dict[str, str] | None = None) -> urllib.request.Request:
+    def _build_request(self, method: str, headers: dict[str, str] | None = None) -> urllib_request.Request:
         """Build a request with the standard headers we need."""
         base_headers = {"Accept-Encoding": "identity", "User-Agent": "vdiskprobe/{0}".format(__version__)}
         if headers:
             base_headers.update(headers)
-        return urllib.request.Request(self.url, headers=base_headers, method=method)
+        return urllib_request.Request(self.url, headers=base_headers, method=method)
 
     def _retry(self, attempt: int, reason: str) -> None:
         """Sleep before the next retry attempt."""
@@ -271,7 +273,7 @@ def _error_text(exc: BaseException) -> str:
 def _build_default_opener() -> Any:
     """Build the default opener with an explicit HTTPS context."""
     context = _build_ssl_context()
-    return urllib.request.build_opener(urllib.request.HTTPSHandler(context=context))
+    return urllib_request.build_opener(urllib_request.HTTPSHandler(context=context))
 
 
 def _build_ssl_context(environ=None, verify_paths=None, context_factory=None, isfile=None, isdir=None):
