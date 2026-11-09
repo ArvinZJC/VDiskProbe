@@ -18,6 +18,7 @@
 
 ## Working rules
 
+- Inspect existing virtual environments and the IDE interpreter before creating an environment. Reuse the primary environment described in [Development](README.md#development); do not create a second one alongside it.
 - Keep module boundaries stable and reuse parsing helpers and `FormatDetector.build_info(...)`. Add recognition, metadata, short-read, failure-path, and precedence tests when extending detection.
 - Use local fixtures for transport tests. Add meaningful assertions for missing behaviour; do not lower quality thresholds, omit runtime modules, or add coverage exclusions merely to pass checks.
 - Treat demonstrated regressions in byte reads, detector dispatch, and parsing hot paths as release blockers. Substantiate performance claims with measurements.

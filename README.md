@@ -176,15 +176,15 @@ Enabling propagation removes the package stream handler and null handlers while 
 
 ## Development
 
-Run commands from the repository root with a supported Python interpreter. Create and activate an isolated environment, then install the development tools:
+Run commands from the repository root with a supported Python interpreter. Use `venv/` as the project's development environment and configure your IDE to use its interpreter. Reuse it if it already exists; otherwise, create it before activating it and installing the development tools:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python -m venv venv
+source venv/bin/activate
 python -m pip install -e '.[dev]'
 ```
 
-Use the activation command appropriate for your shell. Test, formatting, and build dependencies belong in the `dev` extra in `pyproject.toml`; upload tooling is installed separately as described under [Releasing](#releasing).
+Use the activation command appropriate for your shell. Keep one primary development environment; separate temporary environments are still needed for compatibility and clean-install checks. Test, formatting, and build dependencies belong in the `dev` extra in `pyproject.toml`; upload tooling is installed separately as described under [Releasing](#releasing).
 
 ### Required checks
 
