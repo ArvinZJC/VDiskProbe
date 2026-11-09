@@ -12,6 +12,7 @@
 - Use `bytes` for binary data and `str` for text; encode and decode explicitly at defined boundaries.
 - Use modern type annotations supported by the minimum Python version and numpydoc-style docstrings for public APIs.
 - Prefer explicit imports. Combine imports from the same module when readable; use aliases only to clarify ambiguous names. Do not use wildcard imports.
+- Follow the README's [import compatibility](README.md#import-compatibility) guidance when changing import timing or adopting lazy imports.
 - Prioritise correctness over performance, and measured performance improvements over cosmetic refactoring.
 - Avoid unnecessary duplication and excessive branching, particularly in byte parsing and detector dispatch.
 
