@@ -289,6 +289,10 @@ python -m twine check --strict "$release_dir"/*
 
 Stop if a command fails. If the directory already exists, inspect it before proceeding; do not mix old and new builds. Twine is an upload tool installed separately from the development extra. Install the final wheel and source archive in separate clean environments and exercise imports and both CLI entry points outside the checkout, as the packaging checks do. Retain these exact files for both uploads; rebuild and revalidate if release content changes.
 
+#### Local artefact retention
+
+Keep only the latest final release build locally, in `dist/release-<version>/`. After that build succeeds, remove older release artefacts and superseded development, rehearsal, and validation builds from `dist/` and repository-local scratch directories. Keep validation records separately from the artefacts. Preserve the latest wheel and source archive unchanged through validation and both uploads. This cleanup applies only to local build files, not Git tags, GitHub Releases, or files published to package indexes.
+
 #### Rehearse on TestPyPI
 
 TestPyPI and PyPI have separate accounts and API tokens. Use the token for the destination index, with `__token__` as the username. Enter tokens at the private password prompt or use a credential store; never put them in commands, documentation, or Git. See the [TestPyPI guide](https://packaging.python.org/en/latest/guides/using-testpypi/) and [PyPI authentication guidance](https://pypi.org/help/#apitoken).

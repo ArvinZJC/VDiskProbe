@@ -25,6 +25,7 @@
 - Keep public files, examples, fixtures, package metadata, and Git messages free of internal project names, paths, URLs, and operational data. Store any private cross-repository mapping outside this repository.
 - Keep working specifications in `docs/superpowers/specs/` and implementation plans in `docs/superpowers/plans/`. These directories are ignored; never commit or force-add their contents.
 - Treat release preparation, Git tagging, and package publication as separate actions. Upload only when authorised, and follow the README release verification steps before reporting that publication is complete.
+- Apply the README's [local artefact retention](README.md#local-artefact-retention) policy after a successful final release build.
 
 ## Changelog policy
 
