@@ -161,8 +161,6 @@ class ByteSource:
             method: Callable[..., Any] | None = getattr(self._reader, method_name, None)
             if method is None:
                 continue
-            # Missing methods are skipped above; this is the reader protocol call.
-            # noinspection PyCallingNonCallable
             return method(offset, size)
         if hasattr(self._reader, "seek") and hasattr(self._reader, "tell"):
             position = self._reader.tell()
@@ -194,9 +192,7 @@ class ByteSource:
             if candidate is None:
                 continue
             try:
-                # callable() guards the invocation of a dynamic size provider.
-                # noinspection PyCallingNonCallable
-                value = candidate() if callable(candidate) else candidate
+                value: Any = candidate() if callable(candidate) else candidate
             except TypeError:
                 continue
             if value is not None:
@@ -208,8 +204,6 @@ class ByteSource:
         fileno: Callable[[], int] | None = getattr(self._reader, "fileno", None)
         if fileno is not None:
             try:
-                # fileno is guarded against None above; discovery failures are handled below.
-                # noinspection PyCallingNonCallable
                 return int(os.fstat(fileno()).st_size)
             except (IOError, OSError, TypeError, ValueError):
                 pass
@@ -241,8 +235,6 @@ class ByteSource:
         fileno: Callable[[], int] | None = getattr(self._reader, "fileno", None)
         if fileno is not None:
             try:
-                # fileno is guarded against None above; discovery failures are handled below.
-                # noinspection PyCallingNonCallable
                 stat_result = os.fstat(fileno())
                 blocks = getattr(stat_result, "st_blocks", None)
                 if blocks is not None:
@@ -277,8 +269,6 @@ def _coerce_bytes(data: Any) -> bytes:
     for name in ("tobytes", "tostring"):
         method: Callable[..., Any] | None = getattr(data, name, None)
         if method is not None:
-            # The None case is excluded; invoke the optional byte-conversion protocol.
-            # noinspection PyCallingNonCallable
             result = method()
             return result.encode("latin-1") if isinstance(result, str) else bytes(result)
     return str(data).encode("latin-1")

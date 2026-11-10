@@ -9,7 +9,7 @@ class CountingReader:
 
     def __init__(self, payload):
         self.payload = payload
-        self.requests = []
+        self.requests: list[tuple[int, int]] = []
         self.fail_next = False
 
     def read(self, offset, size):

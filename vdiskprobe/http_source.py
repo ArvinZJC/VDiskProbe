@@ -226,13 +226,9 @@ def _header_value(headers: Any, name: str) -> Any:
     getter: Callable[[str], Any] | None = getattr(headers, "get", None)
     if getter is None:
         return None
-    # The None case returns above; the remaining header getter is callable.
-    # noinspection PyCallingNonCallable
     value = getter(name)
     if value is not None:
         return value
-    # The same guarded getter supports a lower-case header lookup.
-    # noinspection PyCallingNonCallable
     return getter(name.lower())
 
 

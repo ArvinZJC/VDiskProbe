@@ -224,8 +224,6 @@ def test_real_loopback_range_and_ignored_range(monkeypatch):
         def log_message(self, format, *args):
             pass
 
-    # Handler inherits the request-handler constructor; the real server exercises it below.
-    # noinspection PyTypeChecker
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()

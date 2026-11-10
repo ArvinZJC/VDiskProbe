@@ -41,21 +41,25 @@ def test_log_levels(args, level):
 @pytest.mark.parametrize(
     "args, code", [([], 2), (["-v"], 2), (["-h"], 0), (["--help"], 0), (["-V"], 0), (["--version"], 0)]
 )
-def test_parser_exits(args, code, capsys):
+def test_parser_exits(args, code, capsys: pytest.CaptureFixture[str]):
     with pytest.raises(SystemExit) as exc:
         cli.main(args)
     assert exc.value.code == code
-    output = capsys.readouterr()
+    out: str
+    err: str
+    out, err = capsys.readouterr()
     if code == 0:
-        assert "vdiskprobe" in output.out
+        assert "vdiskprobe" in out
     else:
-        assert output.err and not output.out
+        assert err and not out
 
 
-def test_json_output(tmp_path, capsys):
+def test_json_output(tmp_path, capsys: pytest.CaptureFixture[str]):
     path = tmp_path / "disk.qcow2"
     path.write_bytes(b"QFI\xfb" + struct.pack(">I", 3))
     assert cli.main([str(path), "--json"]) == 0
+    out: str
+    err: str
     out, err = capsys.readouterr()
     payload = json.loads(out)
     assert payload["format"] == "qcow2"
@@ -66,8 +70,10 @@ def test_json_output(tmp_path, capsys):
     assert err == ""
 
 
-def test_list_formats_precedes_json(capsys):
+def test_list_formats_precedes_json(capsys: pytest.CaptureFixture[str]):
     assert cli.main(["--list-formats", "--json"]) == 0
+    out: str
+    err: str
     out, err = capsys.readouterr()
     assert len(out.splitlines()) == 13
     assert out.startswith("qcow:")
@@ -110,7 +116,7 @@ def test_size_formatting(value, expected):
 
 
 @pytest.mark.parametrize("error", [OSError("missing"), InvalidSourceError("invalid")])
-def test_errors_stay_on_stderr(monkeypatch, error, capsys):
+def test_errors_stay_on_stderr(monkeypatch, error, capsys: pytest.CaptureFixture[str]):
     def fail(_path):
         raise error
 
@@ -118,6 +124,8 @@ def test_errors_stay_on_stderr(monkeypatch, error, capsys):
     # noinspection PyUnresolvedReferences
     monkeypatch.setattr(cli, "detect_path", fail)
     assert cli.main(["disk"]) == 1
+    out: str
+    err: str
     out, err = capsys.readouterr()
     assert not out
     assert "vdiskprobe:" in err
@@ -148,26 +156,30 @@ def test_subprocess_entry_points(tmp_path):
         assert "--list-formats" in result.stdout
 
 
-def test_large_descriptor_size_does_not_overflow_human_output(tmp_path, capsys):
+def test_large_descriptor_size_does_not_overflow_human_output(tmp_path, capsys: pytest.CaptureFixture[str]):
     path = tmp_path / "huge.vmdk"
     path.write_bytes(b"# Disk DescriptorFile\nRW " + b"9" * 400 + b" FLAT huge\n")
     assert cli.main([str(path)]) == 0
+    out: str
+    err: str
     out, err = capsys.readouterr()
     assert "format: vmdk" in out
     assert str(int("9" * 400) * 512) + " bytes)" in out
     assert not err
 
 
-def test_malformed_url_is_a_source_error(capsys):
+def test_malformed_url_is_a_source_error(capsys: pytest.CaptureFixture[str]):
     # URL syntax only; this literal is never used for a network request.
     # noinspection HttpUrlsUsage
     assert cli.main(["http://[bad"]) == 1
+    out: str
+    err: str
     out, err = capsys.readouterr()
     assert not out
     assert "URL" in err
 
 
-def test_unescaped_unicode_url_is_a_source_error(monkeypatch, capsys):
+def test_unescaped_unicode_url_is_a_source_error(monkeypatch, capsys: pytest.CaptureFixture[str]):
     from urllib.request import ProxyHandler, build_opener
     from vdiskprobe import api
     from vdiskprobe.http_source import HttpRangeReader
@@ -177,6 +189,8 @@ def test_unescaped_unicode_url_is_a_source_error(monkeypatch, capsys):
     )
     # Encoding fails before connecting; port 1 is never contacted.
     assert cli.main(["http://127.0.0.1:1/磁盘.qcow2"]) == 1
+    out: str
+    err: str
     out, err = capsys.readouterr()
     assert not out
     assert "vdiskprobe:" in err

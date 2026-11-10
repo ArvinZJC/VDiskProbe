@@ -18,7 +18,7 @@ from vdiskprobe.http_source import HttpRangeReader
 
 def test_short_prefix_preserves_later_bytes_and_exact_cache():
     payload = b"a" * 512 + b"later"
-    requests = []
+    requests: list[tuple[int, int]] = []
 
     def read(offset, size):
         requests.append((offset, size))
@@ -158,7 +158,7 @@ def test_vmdk_horizontal_whitespace_and_crlf():
 
 def test_vmdk_blank_lines_within_descriptor_window():
     payload = b"# Disk DescriptorFile\nRW 2 FLAT disk\n" + b"\n" * 65000 + b"# end\n"
-    requests = []
+    requests: list[tuple[int, int]] = []
 
     def read(offset, size):
         requests.append((offset, size))
