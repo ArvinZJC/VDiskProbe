@@ -95,6 +95,17 @@ def test_clean_artifact_install(artifacts, tmp_path, kind):
         assert result["source_name"] == str(payload)
 
 
+def test_sdist_tests_can_be_collected(artifacts, tmp_path):
+    with tarfile.open(artifacts["sdist"]) as archive:
+        archive.extractall(tmp_path, filter="data")
+    project = tmp_path / f"vdiskprobe-{PROJECT_VERSION}"
+    env = os.environ.copy()
+    env.pop("PYTHONPATH", None)
+    output = run([sys.executable, "-m", "pytest", "--collect-only", "-o", "addopts=", "tests"], project, env)
+    assert "test_qcow2_detection" in output
+    assert "test_clean_artifact_install" in output
+
+
 def test_toml_version_bump_reaches_installed_package_and_cli(tmp_path):
     project = tmp_path / "project"
     project.mkdir()

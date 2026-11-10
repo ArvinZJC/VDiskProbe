@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Include test helpers in the source archive so its test suite can be collected and run after extraction.
 - Honour an explicit replacement stream when reconfiguring logging, including after the previous stream has closed. Reuse the package handler and preserve its destination when no stream is supplied.
 
 ## 1.0.1 — 2026-11-09

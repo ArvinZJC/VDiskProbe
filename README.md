@@ -250,7 +250,7 @@ python -m build
 python -m pytest -m packaging -o addopts='' tests/test_packaging.py
 ```
 
-Packaging tests are excluded from the default suite. They inspect distribution contents and metadata, install both artefacts in separate clean environments, and exercise imports and both CLI entry points outside the checkout. pip must be able to obtain the build dependencies, either from a package index or a local wheel cache.
+Packaging tests are excluded from the default suite. They inspect distribution contents and metadata, check test collection from the extracted source archive, install both artefacts in separate clean environments, and exercise imports and both CLI entry points outside the checkout. pip must be able to obtain the build dependencies, either from a package index or a local wheel cache.
 
 Repeat the full suite and packaging checks on each supported Python minor version when changing compatibility or packaging. Support tracks stable Python releases that have not reached end of life; check the Python release lifecycle when updating the supported range. Keep syntax and dependencies compatible with the minimum version listed above.
 
