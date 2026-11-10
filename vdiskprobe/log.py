@@ -54,8 +54,9 @@ def configure_logging(
     level : int, optional
         Logging level to apply.
     stream : TextIO, optional
-        Output stream used by the stream handler.  Ignored when
-        *propagate* is *True*.
+        Output stream used by the stream handler. An explicit stream replaces
+        the existing destination; ``None`` preserves it, or uses stderr when
+        creating a handler. Ignored when *propagate* is *True*.
     propagate : bool, optional
         When *True*, remove null and package stream handlers and enable propagation
         so that VDiskProbe logs flow to ancestor loggers.  No stream
@@ -91,6 +92,13 @@ def configure_logging(
             setattr(active_handler, "_vdiskprobe_handler", True)
             active_handler.setFormatter(logging.Formatter("%(asctime)s %(name)s [%(levelname)s] %(message)s"))
             logger.addHandler(active_handler)
+        elif stream is not None:
+            # Avoid setStream's flush of a caller-owned stream that may already be closed.
+            active_handler.acquire()
+            try:
+                active_handler.stream = stream
+            finally:
+                active_handler.release()
     logger.setLevel(level)
     return logger
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Honour an explicit replacement stream when reconfiguring logging, including after the previous stream has closed. Reuse the package handler and preserve its destination when no stream is supplied.
+
 ## 1.0.1 — 2026-11-09
 
 - Defer built-in format loading and heavy HTTP imports until needed on Python 3.15, while retaining eager imports on Python 3.11–3.14 and the existing public API.
