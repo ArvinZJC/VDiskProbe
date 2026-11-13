@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.2 — 2026-11-13
 
 - Retry transport failures while reading allowed HTTP error responses, and report exhausted retries as `RemoteSourceError`.
 - Include test helpers in the source archive so its test suite can be collected and run after extraction.
