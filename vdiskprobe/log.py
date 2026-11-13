@@ -4,6 +4,7 @@
 """Logging helpers for VDiskProbe."""
 
 import logging
+from typing import TextIO
 
 LOGGER_NAME = "vdiskprobe"
 NullHandler = logging.NullHandler
@@ -44,7 +45,7 @@ def get_logger(name: str | None = None) -> logging.Logger:
 
 
 def configure_logging(
-    level: int | None = logging.INFO, stream: object = None, propagate: bool = False
+    level: int | None = logging.INFO, stream: TextIO | None = None, propagate: bool = False
 ) -> logging.Logger:
     """Configure the VDiskProbe root logger.
 
@@ -52,9 +53,10 @@ def configure_logging(
     ----------
     level : int, optional
         Logging level to apply.
-    stream : object, optional
-        Output stream used by the stream handler.  Ignored when
-        *propagate* is *True*.
+    stream : TextIO, optional
+        Output stream used by the stream handler. An explicit stream replaces
+        the existing destination; ``None`` preserves it, or uses stderr when
+        creating a handler. Ignored when *propagate* is *True*.
     propagate : bool, optional
         When *True*, remove null and package stream handlers and enable propagation
         so that VDiskProbe logs flow to ancestor loggers.  No stream
@@ -84,10 +86,19 @@ def configure_logging(
                 active_handler = handler
                 break
         if active_handler is None:
+            # Both TextIO and None satisfy StreamHandler; PyCharm cannot resolve this union overload.
+            # noinspection PyTypeChecker
             active_handler = logging.StreamHandler(stream)
             setattr(active_handler, "_vdiskprobe_handler", True)
             active_handler.setFormatter(logging.Formatter("%(asctime)s %(name)s [%(levelname)s] %(message)s"))
             logger.addHandler(active_handler)
+        elif stream is not None:
+            # Avoid setStream's flush of a caller-owned stream that may already be closed.
+            active_handler.acquire()
+            try:
+                active_handler.stream = stream
+            finally:
+                active_handler.release()
     logger.setLevel(level)
     return logger
 

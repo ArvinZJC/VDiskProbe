@@ -172,7 +172,7 @@ configure_logging(logging.DEBUG)
 
 To explicitly override the package logging level while using the application's existing ancestor handlers, use `configure_logging(logging.DEBUG, propagate=True)`. This sets the package logger's level to `DEBUG` instead of inheriting it. Ancestor logger levels do not filter propagated records, but handler levels and filters still apply. To restore level inheritance, use `configure_logging(logging.NOTSET, propagate=True)`.
 
-Enabling propagation removes the package stream handler and null handlers while preserving other application-owned handlers; it adds no stream handler. Repeated stream configuration reuses an existing package stream handler; it does not replace its stream. Applications can also configure the package logger directly with `logging.getLogger("vdiskprobe")`. `get_logger(name)` is intended for package modules. Applications using the library should use their own `logging.getLogger(__name__)`.
+Enabling propagation removes the package stream handler and null handlers while preserving other application-owned handlers; it adds no stream handler. Repeated stream configuration reuses an existing package stream handler. An explicit `stream` replaces its destination, even if the previous stream has closed; omitting it or passing `None` preserves the destination. A new handler defaults to stderr. VDiskProbe does not close caller-owned streams. Applications can also configure the package logger directly with `logging.getLogger("vdiskprobe")`. `get_logger(name)` is intended for package modules. Applications using the library should use their own `logging.getLogger(__name__)`.
 
 ## Development
 
@@ -250,7 +250,7 @@ python -m build
 python -m pytest -m packaging -o addopts='' tests/test_packaging.py
 ```
 
-Packaging tests are excluded from the default suite. They inspect distribution contents and metadata, install both artefacts in separate clean environments, and exercise imports and both CLI entry points outside the checkout. pip must be able to obtain the build dependencies, either from a package index or a local wheel cache.
+Packaging tests are excluded from the default suite. They inspect distribution contents and metadata, check test collection from the extracted source archive, install both artefacts in separate clean environments, and exercise imports and both CLI entry points outside the checkout. pip must be able to obtain the build dependencies, either from a package index or a local wheel cache.
 
 Repeat the full suite and packaging checks on each supported Python minor version when changing compatibility or packaging. Support tracks stable Python releases that have not reached end of life; check the Python release lifecycle when updating the supported range. Keep syntax and dependencies compatible with the minimum version listed above.
 

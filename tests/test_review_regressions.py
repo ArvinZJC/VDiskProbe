@@ -18,7 +18,7 @@ from vdiskprobe.http_source import HttpRangeReader
 
 def test_short_prefix_preserves_later_bytes_and_exact_cache():
     payload = b"a" * 512 + b"later"
-    requests = []
+    requests: list[tuple[int, int]] = []
 
     def read(offset, size):
         requests.append((offset, size))
@@ -96,6 +96,45 @@ def test_propagation_removes_only_package_handler(monkeypatch):
     assert inherited.getvalue() == application.getvalue() == "one message\n"
 
 
+@pytest.mark.parametrize("close_previous", [False, True])
+def test_logging_reconfiguration_replaces_explicit_stream(monkeypatch, close_previous):
+    logger = logging.getLogger("vdiskprobe")
+    monkeypatch.setattr(logger, "handlers", [])
+    monkeypatch.setattr(logger, "level", logger.level)
+    monkeypatch.setattr(logger, "propagate", logger.propagate)
+    first, second, application = io.StringIO(), io.StringIO(), io.StringIO()
+    configure_logging(logging.INFO, stream=first)
+    owned = next(h for h in logger.handlers if getattr(h, "_vdiskprobe_handler", False))
+    custom = logging.StreamHandler(application)
+    logger.addHandler(custom)
+    logger.info("before switch")
+    assert first.getvalue().count("before switch") == 1
+    if close_previous:
+        first.close()
+
+    configure_logging(logging.DEBUG, stream=second)
+    assert owned.stream is second
+    assert custom in logger.handlers
+    assert [h for h in logger.handlers if getattr(h, "_vdiskprobe_handler", False)] == [owned]
+    logger.debug("after switch")
+    assert second.getvalue().count("after switch") == 1
+    assert application.getvalue().count("after switch") == 1
+    if not close_previous:
+        assert not first.closed
+        assert "after switch" not in first.getvalue()
+
+    configure_logging(logging.ERROR)
+    assert owned.stream is second
+    logger.warning("filtered message")
+    assert "filtered message" not in second.getvalue()
+    configure_logging(logging.INFO, stream=second)
+    logger.info("same stream")
+    assert second.getvalue().count("same stream") == 1
+    configure_logging(stream=first, propagate=True)
+    assert owned not in logger.handlers
+    assert custom in logger.handlers
+
+
 def test_transport_failure_is_not_deferred():
     payload = b"LUKS\xba\xbe" + b"\0" * 99994
     responses = [
@@ -158,7 +197,7 @@ def test_vmdk_horizontal_whitespace_and_crlf():
 
 def test_vmdk_blank_lines_within_descriptor_window():
     payload = b"# Disk DescriptorFile\nRW 2 FLAT disk\n" + b"\n" * 65000 + b"# end\n"
-    requests = []
+    requests: list[tuple[int, int]] = []
 
     def read(offset, size):
         requests.append((offset, size))

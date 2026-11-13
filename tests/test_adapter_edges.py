@@ -22,12 +22,13 @@ from vdiskprobe.http_source import HttpRangeReader, _build_ssl_context, _discove
 from vdiskprobe.source import ByteSource
 
 
-def test_module_entry_point_and_import(monkeypatch, capsys):
+def test_module_entry_point_and_import(monkeypatch, capsys: pytest.CaptureFixture[str]):
     monkeypatch.setattr("sys.argv", ["vdiskprobe", "--list-formats"])
     with pytest.raises(SystemExit) as exc:
         runpy.run_module("vdiskprobe", run_name="__main__")
     assert exc.value.code == 0
-    assert "qcow2" in capsys.readouterr().out
+    out: str = capsys.readouterr().out
+    assert "qcow2" in out
     runpy.run_module("vdiskprobe.__main__", run_name="module_import_check")
     assert capsys.readouterr().out == ""
 

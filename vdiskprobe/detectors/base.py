@@ -27,7 +27,7 @@ class FormatDetector:
     """Base class for a format detector."""
 
     format_name = None
-    aliases = ()
+    aliases: tuple[str, ...] = ()
     description = ""
     read_only = False
     priority = 100

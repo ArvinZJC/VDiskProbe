@@ -151,7 +151,13 @@ class HttpRangeReader:
         for attempt in range(attempts):
             request = self._build_request(method, headers=headers)
             try:
-                response = self._opener.open(request, timeout=self.timeout)
+                try:
+                    response = self._opener.open(request, timeout=self.timeout)
+                except urllib.error.HTTPError as exc:
+                    if exc.code not in allow_statuses:
+                        raise
+                    # Consume allowed error responses within the transport retry boundary.
+                    response = exc
                 try:
                     status = response.getcode() or 200
                     response_headers = response.info()
@@ -164,12 +170,6 @@ class HttpRangeReader:
                 return status, response_headers, data
             except urllib.error.HTTPError as exc:
                 try:
-                    if exc.code in allow_statuses:
-                        try:
-                            payload = exc.read() if read_size is None else exc.read(read_size)
-                        finally:
-                            exc.close()
-                        return exc.code, getattr(exc, "headers", None) or getattr(exc, "hdrs", None), payload
                     if exc.code in self.RETRYABLE_STATUS_CODES and attempt + 1 < attempts:
                         self._retry(attempt, "status={0}".format(exc.code))
                         continue
@@ -226,13 +226,9 @@ def _header_value(headers: Any, name: str) -> Any:
     getter: Callable[[str], Any] | None = getattr(headers, "get", None)
     if getter is None:
         return None
-    # The None case returns above; the remaining header getter is callable.
-    # noinspection PyCallingNonCallable
     value = getter(name)
     if value is not None:
         return value
-    # The same guarded getter supports a lower-case header lookup.
-    # noinspection PyCallingNonCallable
     return getter(name.lower())
 
 
